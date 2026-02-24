@@ -32,7 +32,8 @@ UvQueue::~UvQueue()
     env_ = nullptr;
 }
 
-void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bool sendable)
+void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bool sendable,
+    const std::string &taskName)
 {
     if (!getter) {
         LOG_ERROR("callback is nullptr");
@@ -72,7 +73,7 @@ void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bo
         }
         napi_close_handle_scope(env, scope);
     };
-    if (napi_ok != napi_send_event(env_, task, napi_eprio_immediate, "PreferencesDataChange")) {
+    if (napi_ok != napi_send_event(env_, task, napi_eprio_immediate, taskName.c_str())) {
         LOG_ERROR("Failed to napi_send_event.");
     }
 }
