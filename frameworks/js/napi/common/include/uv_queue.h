@@ -15,6 +15,7 @@
 #ifndef OHOS_UV_QUEUE_H
 #define OHOS_UV_QUEUE_H
 #include <functional>
+#include <string>
 #include "napi/native_api.h"
 
 namespace OHOS::PreferencesJsKit {
@@ -26,7 +27,8 @@ public:
     ~UvQueue();
 
     napi_env GetEnv();
-    void AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs = NapiArgsGenerator(), bool sendable = false);
+    void AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs = NapiArgsGenerator(), bool sendable = false,
+        const std::string &taskName = "PreferencesDataChange");
 private:
     napi_env env_ = nullptr;
 };
