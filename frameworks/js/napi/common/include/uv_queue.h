@@ -27,8 +27,8 @@ public:
     ~UvQueue();
 
     napi_env GetEnv();
-    void AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs = NapiArgsGenerator(), bool sendable = false,
-        const std::string &taskName = "PreferencesDataChange");
+    void AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs = NapiArgsGenerator(), bool isSendable = false,
+        const std::string &taskName = "");
 private:
     napi_env env_ = nullptr;
 };
