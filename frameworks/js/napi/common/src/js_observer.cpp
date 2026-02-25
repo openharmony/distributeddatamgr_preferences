@@ -73,6 +73,6 @@ void JSObserver::AsyncCall(UvQueue::NapiArgsGenerator genArgs)
             napi_get_reference_value(env, observer->callback_, &callback);
             return callback;
         },
-        genArgs, sendabel_);
+        genArgs, sendabel_, "PreferencesDataChange");
 }
 } // namespace OHOS::DistributedKVStore

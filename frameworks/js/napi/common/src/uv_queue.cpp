@@ -32,7 +32,7 @@ UvQueue::~UvQueue()
     env_ = nullptr;
 }
 
-void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bool sendable,
+void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bool isSendable,
     const std::string &taskName)
 {
     if (!getter) {
@@ -41,7 +41,7 @@ void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bo
     }
 
     auto env = GetEnv();
-    auto task = [env, getter, genArgs, sendable]() {
+    auto task = [env, getter, genArgs, isSendable]() {
         napi_handle_scope scope = nullptr;
         napi_open_handle_scope(env, &scope);
         if (scope == nullptr) {
@@ -57,7 +57,7 @@ void UvQueue::AsyncCall(NapiCallbackGetter getter, NapiArgsGenerator genArgs, bo
         napi_value argv[MAX_CALLBACK_ARG_NUM] = { nullptr };
         if (genArgs) {
             argc = MAX_CALLBACK_ARG_NUM;
-            genArgs(env, sendable, argc, argv);
+            genArgs(env, isSendable, argc, argv);
         }
         napi_value global = nullptr;
         napi_status status = napi_get_global(env, &global);
