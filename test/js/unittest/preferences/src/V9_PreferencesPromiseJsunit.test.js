@@ -1060,4 +1060,28 @@ describe('V9_PreferencesPromiseJsunit', async function () {
             done();
         }
     })
+
+    // Test UvQueue::AsyncCall with taskName parameter
+    it('testPreferencesAsyncCallTaskName001', 0, async function (done) {
+        console.log("testPreferencesAsyncCallTaskName001 begin.")
+        await mPreference.clear();
+        try {
+            let observerCalled = false;
+            var observer = function (key) {
+                console.log("observer received key: " + key);
+                observerCalled = true;
+                expect("testKey").assertEqual(key);
+                mPreference.off('change', observer);
+                done();
+            }
+            mPreference.on('change', observer);
+            await mPreference.put("testKey", "testValue");
+            await mPreference.flush();
+        } catch (err) {
+            console.log("trycatch err =" + err + ", code =" + err.code + ", message =" + err.message)
+            expect().assertFail()
+            mPreference.off('change', observer);
+            done();
+        }
+    })
 })
