@@ -658,6 +658,13 @@ void NDKPreferencesObserver::OnChange(const std::map<std::string, OHOS::NativePr
     if (count == 0) {
         return;
     }
+    
+    std::vector<std::string> keys;
+    keys.reserve(count);
+    for (const auto &[key, value] : records) {
+        keys.push_back(key);
+    }
+    
     OH_PreferencesPair *pairs = new (std::nothrow) OH_PreferencesPair[count];
     if (pairs == nullptr) {
         LOG_ERROR("malloc pairs failed when on change, count: %{public}d, errno:%{public}d", static_cast<int>(count),
@@ -675,8 +682,9 @@ void NDKPreferencesObserver::OnChange(const std::map<std::string, OHOS::NativePr
         }
         valueImpl->cid = PreferencesNdkStructId::PREFERENCES_OH_VALUE_CID;
         valueImpl->value_ = value;
-        pairs[i++] = OH_PreferencesPair { PreferencesNdkStructId::PREFERENCES_OH_PAIR_CID, key.c_str(),
+        pairs[i] = OH_PreferencesPair { PreferencesNdkStructId::PREFERENCES_OH_PAIR_CID, keys[i].c_str(),
             static_cast<OH_PreferencesValue *>(valueImpl), count};
+        i++;
     }
     (dataObserver_)(context_, pairs, count);
     FreePairValue(pairs, count);

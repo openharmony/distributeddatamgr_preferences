@@ -1404,4 +1404,168 @@ HWTEST_F(PreferencesNdkTest, NDKPreferencesGetAllTest_006, TestSize.Level0)
     EXPECT_EQ(OHOS::NativePreferences::PreferencesHelper::DeletePreferences("/data/test/testdb"),
         OHOS::NativePreferences::E_OK);
 }
+
+static std::vector<std::string> g_receivedKeys;
+static std::mutex g_receivedKeysMutex;
+
+void DataChangeObserverCallbackImmediateUse(void *context, const OH_PreferencesPair *pairs, uint32_t count)
+{
+    std::lock_guard<std::mutex> lock(g_receivedKeysMutex);
+    for (uint32_t i = 0; i < count; i++) {
+        const char *pKey = OH_PreferencesPair_GetKey(pairs, i);
+        EXPECT_NE(pKey, nullptr);
+        if (pKey != nullptr) {
+            g_receivedKeys.push_back(std::string(pKey));
+        }
+    }
+}
+
+HWTEST_F(PreferencesNdkTest, NDKPreferencesObserverCallbackTest_001, TestSize.Level0)
+{
+    g_receivedKeys.clear();
+    int errCode = PREFERENCES_OK;
+    OH_PreferencesOption *option = GetCommonOption();
+    OH_Preferences *pref = OH_Preferences_Open(option, &errCode);
+    (void)OH_PreferencesOption_Destroy(option);
+    ASSERT_EQ(errCode, PREFERENCES_OK);
+
+    const char *keys[] = {"callback_test_key_1", "callback_test_key_2", "callback_test_key_3"};
+    ASSERT_EQ(OH_Preferences_RegisterDataObserver(pref, nullptr, DataChangeObserverCallbackImmediateUse, keys, 3),
+        PREFERENCES_OK);
+
+    EXPECT_EQ(OH_Preferences_SetInt(pref, "callback_test_key_1", 100), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_SetString(pref, "callback_test_key_2", "test_string"), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_SetBool(pref, "callback_test_key_3", true), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_Flush(pref), PREFERENCES_OK);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    EXPECT_EQ(g_receivedKeys.size(), 3u);
+    EXPECT_TRUE(std::find(g_receivedKeys.begin(), g_receivedKeys.end(), "callback_test_key_1") != g_receivedKeys.end());
+    EXPECT_TRUE(std::find(g_receivedKeys.begin(), g_receivedKeys.end(), "callback_test_key_2") != g_receivedKeys.end());
+    EXPECT_TRUE(std::find(g_receivedKeys.begin(), g_receivedKeys.end(), "callback_test_key_3") != g_receivedKeys.end());
+
+    EXPECT_EQ(OH_Preferences_UnregisterDataObserver(pref, nullptr, DataChangeObserverCallbackImmediateUse, keys, 3),
+        PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_Close(pref), PREFERENCES_OK);
+    EXPECT_EQ(OHOS::NativePreferences::PreferencesHelper::DeletePreferences("/data/test/testdb"),
+        OHOS::NativePreferences::E_OK);
+}
+
+static int g_callbackCount = 0;
+static std::string g_lastReceivedKey;
+
+void DataChangeObserverCallbackSingleKey(void *context, const OH_PreferencesPair *pairs, uint32_t count)
+{
+    EXPECT_EQ(count, 1u);
+    const char *pKey = OH_PreferencesPair_GetKey(pairs, 0);
+    EXPECT_NE(pKey, nullptr);
+    if (pKey != nullptr) {
+        g_lastReceivedKey = std::string(pKey);
+    }
+    g_callbackCount++;
+}
+
+HWTEST_F(PreferencesNdkTest, NDKPreferencesObserverCallbackTest_002, TestSize.Level0)
+{
+    g_callbackCount = 0;
+    g_lastReceivedKey.clear();
+    int errCode = PREFERENCES_OK;
+    OH_PreferencesOption *option = GetCommonOption();
+    OH_Preferences *pref = OH_Preferences_Open(option, &errCode);
+    (void)OH_PreferencesOption_Destroy(option);
+    ASSERT_EQ(errCode, PREFERENCES_OK);
+
+    const char *keys[] = {"single_key_test"};
+    ASSERT_EQ(OH_Preferences_RegisterDataObserver(pref, nullptr, DataChangeObserverCallbackSingleKey, keys, 1),
+        PREFERENCES_OK);
+
+    EXPECT_EQ(OH_Preferences_SetInt(pref, "single_key_test", 42), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_Flush(pref), PREFERENCES_OK);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    EXPECT_EQ(g_callbackCount, 1);
+    EXPECT_EQ(g_lastReceivedKey, "single_key_test");
+
+    EXPECT_EQ(OH_Preferences_UnregisterDataObserver(pref, nullptr, DataChangeObserverCallbackSingleKey, keys, 1),
+        PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_Close(pref), PREFERENCES_OK);
+    EXPECT_EQ(OHOS::NativePreferences::PreferencesHelper::DeletePreferences("/data/test/testdb"),
+        OHOS::NativePreferences::E_OK);
+}
+
+static std::map<std::string, int> g_receivedIntValues;
+static std::map<std::string, std::string> g_receivedStringValues;
+static std::map<std::string, bool> g_receivedBoolValues;
+static std::mutex g_receivedValuesMutex;
+
+void DataChangeObserverCallbackValueType(void *context, const OH_PreferencesPair *pairs, uint32_t count)
+{
+    std::lock_guard<std::mutex> lock(g_receivedValuesMutex);
+    for (uint32_t i = 0; i < count; i++) {
+        const char *pKey = OH_PreferencesPair_GetKey(pairs, i);
+        EXPECT_NE(pKey, nullptr);
+        if (pKey == nullptr) {
+            continue;
+        }
+        const OH_PreferencesValue *pValue = OH_PreferencesPair_GetPreferencesValue(pairs, i);
+        Preference_ValueType type = OH_PreferencesValue_GetValueType(pValue);
+        if (type == Preference_ValueType::PREFERENCE_TYPE_INT) {
+            int intV = 0;
+            EXPECT_EQ(OH_PreferencesValue_GetInt(pValue, &intV), PREFERENCES_OK);
+            g_receivedIntValues[pKey] = intV;
+        } else if (type == Preference_ValueType::PREFERENCE_TYPE_STRING) {
+            char *stringV = nullptr;
+            uint32_t len = 0;
+            EXPECT_EQ(OH_PreferencesValue_GetString(pValue, &stringV, &len), PREFERENCES_OK);
+            if (stringV != nullptr) {
+                g_receivedStringValues[pKey] = std::string(stringV);
+                OH_Preferences_FreeString(stringV);
+            }
+        } else if (type == Preference_ValueType::PREFERENCE_TYPE_BOOL) {
+            bool boolV = false;
+            EXPECT_EQ(OH_PreferencesValue_GetBool(pValue, &boolV), PREFERENCES_OK);
+            g_receivedBoolValues[pKey] = boolV;
+        }
+    }
+}
+
+HWTEST_F(PreferencesNdkTest, NDKPreferencesObserverCallbackTest_003, TestSize.Level0)
+{
+    g_receivedIntValues.clear();
+    g_receivedStringValues.clear();
+    g_receivedBoolValues.clear();
+    int errCode = PREFERENCES_OK;
+    OH_PreferencesOption *option = GetCommonOption();
+    OH_Preferences *pref = OH_Preferences_Open(option, &errCode);
+    (void)OH_PreferencesOption_Destroy(option);
+    ASSERT_EQ(errCode, PREFERENCES_OK);
+
+    const char *keys[] = {"int_key", "string_key", "bool_key"};
+    ASSERT_EQ(OH_Preferences_RegisterDataObserver(pref, nullptr, DataChangeObserverCallbackValueType, keys, 3),
+        PREFERENCES_OK);
+
+    EXPECT_EQ(OH_Preferences_SetInt(pref, "int_key", 12345), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_SetString(pref, "string_key", "callback_test_value"), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_SetBool(pref, "bool_key", false), PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_Flush(pref), PREFERENCES_OK);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    EXPECT_EQ(g_receivedIntValues.size(), 1u);
+    EXPECT_EQ(g_receivedIntValues["int_key"], 12345);
+
+    EXPECT_EQ(g_receivedStringValues.size(), 1u);
+    EXPECT_EQ(g_receivedStringValues["string_key"], "callback_test_value");
+
+    EXPECT_EQ(g_receivedBoolValues.size(), 1u);
+    EXPECT_EQ(g_receivedBoolValues["bool_key"], false);
+
+    EXPECT_EQ(OH_Preferences_UnregisterDataObserver(pref, nullptr, DataChangeObserverCallbackValueType, keys, 3),
+        PREFERENCES_OK);
+    EXPECT_EQ(OH_Preferences_Close(pref), PREFERENCES_OK);
+    EXPECT_EQ(OHOS::NativePreferences::PreferencesHelper::DeletePreferences("/data/test/testdb"),
+        OHOS::NativePreferences::E_OK);
+}
 }
