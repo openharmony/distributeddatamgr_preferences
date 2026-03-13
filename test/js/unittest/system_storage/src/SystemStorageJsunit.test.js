@@ -452,4 +452,652 @@ describe('SystemStorageJsunit', function () {
         console.log(TAG + '************* testClear001 end *************');
     })
 
+    /*
+     * @tc.name testSet005
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0005
+     * @tc.desc set key with exactly 32 bytes (boundary value) should succeed
+     */
+    it('testSet005', 0, async function () {
+        console.log(TAG + '************* testSet005 start *************');
+        let successRet = false;
+        let key32 = 'x'.repeat(32);
+        await storage.set({
+            key: key32,
+            value: 'testValue',
+            success: async function () {
+                successRet = true;
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await storage.get({
+            key: key32,
+            success: async function (data) {
+                await expect(data).assertEqual('testValue');
+            }
+        });
+        await expect(successRet).assertTrue();
+        console.log(TAG + '************* testSet005 end *************');
+    })
+
+    /*
+     * @tc.name testSet006
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0006
+     * @tc.desc set value with exactly 128 bytes (boundary value) should succeed
+     */
+    it('testSet006', 0, async function () {
+        console.log(TAG + '************* testSet006 start *************');
+        let successRet = false;
+        let value128 = 'x'.repeat(128);
+        await storage.set({
+            key: 'testKey',
+            value: value128,
+            success: async function () {
+                successRet = true;
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            success: async function (data) {
+                await expect(data.length).assertEqual(128);
+                await expect(data).assertEqual(value128);
+            }
+        });
+        await expect(successRet).assertTrue();
+        console.log(TAG + '************* testSet006 end *************');
+    })
+
+    /*
+     * @tc.name testSet007
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0007
+     * @tc.desc set without callbacks should still store value
+     */
+    it('testSet007', 0, async function () {
+        console.log(TAG + '************* testSet007 start *************');
+        await storage.set({
+            key: 'testKey',
+            value: 'testValue'
+        });
+        await storage.get({
+            key: 'testKey',
+            success: async function (data) {
+                await expect(data).assertEqual('testValue');
+            }
+        });
+        console.log(TAG + '************* testSet007 end *************');
+    })
+
+    /*
+     * @tc.name testGet005
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_0005
+     * @tc.desc get with default exactly 128 bytes (boundary value) should succeed
+     */
+    it('testGet005', 0, async function () {
+        console.log(TAG + '************* testGet005 start *************');
+        let default128 = 'x'.repeat(128);
+        await storage.get({
+            key: 'nonExistentKey',
+            default: default128,
+            success: async function (data) {
+                await expect(data).assertEqual(default128);
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        console.log(TAG + '************* testGet005 end *************');
+    })
+
+    /*
+     * @tc.name testGet006
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_0006
+     * @tc.desc get without default parameter when key not exists should return empty string
+     */
+    it('testGet006', 0, async function () {
+        console.log(TAG + '************* testGet006 start *************');
+        let getData = undefined;
+        await storage.get({
+            key: 'nonExistentKey',
+            success: async function (data) {
+                getData = data;
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await expect(getData).assertEqual('');
+        console.log(TAG + '************* testGet006 end *************');
+    })
+
+    /*
+     * @tc.name testGet007
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_0007
+     * @tc.desc get with key over 32 bytes should receive fail callback
+     */
+    it('testGet007', 0, async function () {
+        console.log(TAG + '************* testGet007 start *************');
+        let testErrCode = undefined;
+        let failRet = false;
+        await storage.get({
+            key: 'x'.repeat(33),
+            success: async function () {
+                await expect(false).assertTrue();
+            },
+            fail: async function (data, errCode) {
+                testErrCode = errCode;
+                failRet = true;
+            }
+        });
+        expect(failRet).assertTrue();
+        expect(-1016).assertEqual(testErrCode);
+        console.log(TAG + '************* testGet007 end *************');
+    })
+
+    /*
+     * @tc.name testUpdate001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Update_0001
+     * @tc.desc update existing key with new value should succeed
+     */
+    it('testUpdate001', 0, async function () {
+        console.log(TAG + '************* testUpdate001 start *************');
+        let successRet = false;
+        await storage.set({
+            key: 'testKey',
+            value: 'initialValue',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            success: async function (data) {
+                await expect(data).assertEqual('initialValue');
+            }
+        });
+        await storage.set({
+            key: 'testKey',
+            value: 'updatedValue',
+            success: async function () {
+                successRet = true;
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            success: async function (data) {
+                await expect(data).assertEqual('updatedValue');
+            }
+        });
+        await expect(successRet).assertTrue();
+        console.log(TAG + '************* testUpdate001 end *************');
+    })
+
+    /*
+     * @tc.name testUpdate002
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Update_0002
+     * @tc.desc update multiple times should maintain latest value
+     */
+    it('testUpdate002', 0, async function () {
+        console.log(TAG + '************* testUpdate002 start *************');
+        const iterations = 5;
+        for (let i = 0; i < iterations; i++) {
+            await storage.set({
+                key: 'counterKey',
+                value: 'value' + i,
+                success: async function () {
+                    await expect(true).assertTrue();
+                }
+            });
+        }
+        await storage.get({
+            key: 'counterKey',
+            success: async function (data) {
+                await expect(data).assertEqual('value' + (iterations - 1));
+            }
+        });
+        console.log(TAG + '************* testUpdate002 end *************');
+    })
+
+    /*
+     * @tc.name testSpecialChars001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_SpecialChars_0001
+     * @tc.desc set and get with special characters in value should work
+     */
+    it('testSpecialChars001', 0, async function () {
+        console.log(TAG + '************* testSpecialChars001 start *************');
+        const specialValues = [
+            '!@#$%^&*()_+-=[]{}|;:\'",.<>?/~`',
+            '中文测试',
+            '🎉🚀✨',
+            'Line1\nLine2\tTab',
+            'Spaces   and\ttabs\n'
+        ];
+        for (let i = 0; i < specialValues.length; i++) {
+            await storage.set({
+                key: 'specialKey' + i,
+                value: specialValues[i],
+                success: async function () {
+                    await expect(true).assertTrue();
+                }
+            });
+            await storage.get({
+                key: 'specialKey' + i,
+                success: async function (data) {
+                    await expect(data).assertEqual(specialValues[i]);
+                }
+            });
+        }
+        console.log(TAG + '************* testSpecialChars001 end *************');
+    })
+
+    /*
+     * @tc.name testDelete004
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_0004
+     * @tc.desc delete same key multiple times should not fail
+     */
+    it('testDelete004', 0, async function () {
+        console.log(TAG + '************* testDelete004 start *************');
+        await storage.set({
+            key: 'testKey',
+            value: 'testValue',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.delete({
+            key: 'testKey',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.delete({
+            key: 'testKey',
+            success: async function () {
+                await expect(true).assertTrue();
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            default: 'defaultValue',
+            success: async function (data) {
+                await expect(data).assertEqual('defaultValue');
+            }
+        });
+        console.log(TAG + '************* testDelete004 end *************');
+    })
+
+    /*
+     * @tc.name testClear002
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Clear_0002
+     * @tc.desc clear empty storage should succeed
+     */
+    it('testClear002', 0, async function () {
+        console.log(TAG + '************* testClear002 start *************');
+        let successRet = false;
+        await storage.clear({
+            success: async function () {
+                successRet = true;
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await expect(successRet).assertTrue();
+        console.log(TAG + '************* testClear002 end *************');
+    })
+
+    /*
+     * @tc.name testClear003
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Clear_0003
+     * @tc.desc clear multiple times in sequence should succeed
+     */
+    it('testClear003', 0, async function () {
+        console.log(TAG + '************* testClear003 start *************');
+        const iterations = 3;
+        for (let i = 0; i < iterations; i++) {
+            await storage.set({
+                key: 'key' + i,
+                value: 'value' + i,
+                success: async function () {
+                    await expect(true).assertTrue();
+                }
+            });
+        }
+        for (let i = 0; i < iterations; i++) {
+            await storage.clear({
+                success: async function () {
+                    await expect(true).assertTrue();
+                },
+                fail: async function () {
+                    await expect(false).assertTrue();
+                }
+            });
+        }
+        await storage.get({
+            key: 'key0',
+            default: 'default',
+            success: async function (data) {
+                await expect(data).assertEqual('default');
+            }
+        });
+        console.log(TAG + '************* testClear003 end *************');
+    })
+
+    /*
+     * @tc.name testMixedOperations001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Mixed_0001
+     * @tc.desc mixed operations: set, get, update, delete in sequence
+     */
+    it('testMixedOperations001', 0, async function () {
+        console.log(TAG + '************* testMixedOperations001 start *************');
+        await storage.set({
+            key: 'key1',
+            value: 'value1',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.set({
+            key: 'key2',
+            value: 'value2',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'key1',
+            success: async function (data) {
+                await expect(data).assertEqual('value1');
+            }
+        });
+        await storage.set({
+            key: 'key1',
+            value: 'newValue1',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.delete({
+            key: 'key2',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'key1',
+            success: async function (data) {
+                await expect(data).assertEqual('newValue1');
+            }
+        });
+        await storage.get({
+            key: 'key2',
+            default: 'default',
+            success: async function (data) {
+                await expect(data).assertEqual('default');
+            }
+        });
+        console.log(TAG + '************* testMixedOperations001 end *************');
+    })
+
+    /*
+     * @tc.name testOnlyCompleteCallback001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Callbacks_0001
+     * @tc.desc operations with only complete callback should work
+     */
+    it('testOnlyCompleteCallback001', 0, async function () {
+        console.log(TAG + '************* testOnlyCompleteCallback001 start *************');
+        let completeRet = false;
+        await storage.set({
+            key: 'testKey',
+            value: 'testValue',
+            complete: async function () {
+                completeRet = true;
+            }
+        });
+        await expect(completeRet).assertTrue();
+        console.log(TAG + '************* testOnlyCompleteCallback001 end *************');
+    })
+
+    /*
+     * @tc.name testOnlyFailCallback001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Callbacks_0002
+     * @tc.desc set with only fail callback should call fail on invalid input
+     */
+    it('testOnlyFailCallback001', 0, async function () {
+        console.log(TAG + '************* testOnlyFailCallback001 start *************');
+        let failRet = false;
+        let testData = undefined;
+        let testErrCode = undefined;
+        await storage.set({
+            key: '',
+            value: 'testValue',
+            fail: async function (data, errCode) {
+                failRet = true;
+                testData = data;
+                testErrCode = errCode;
+            }
+        });
+        expect(failRet).assertTrue();
+        expect("The key string is null or empty.").assertEqual(testData);
+        expect(-1006).assertEqual(testErrCode);
+        console.log(TAG + '************* testOnlyFailCallback001 end *************');
+    })
+
+    /*
+     * @tc.name testDelete005
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_0005
+     * @tc.desc delete key with exactly 32 bytes (boundary value) should succeed
+     */
+    it('testDelete005', 0, async function () {
+        console.log(TAG + '************* testDelete005 start *************');
+        let key32 = 'x'.repeat(32);
+        await storage.set({
+            key: key32,
+            value: 'testValue',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.delete({
+            key: key32,
+            success: async function () {
+                await expect(true).assertTrue();
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await storage.get({
+            key: key32,
+            default: 'default',
+            success: async function (data) {
+                await expect(data).assertEqual('default');
+            }
+        });
+        console.log(TAG + '************* testDelete005 end *************');
+    })
+
+    /*
+     * @tc.name testDelete006
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_0006
+     * @tc.desc delete key over 32 bytes should receive fail callback
+     */
+    it('testDelete006', 0, async function () {
+        console.log(TAG + '************* testDelete006 start *************');
+        let testErrCode = undefined;
+        let testData = undefined;
+        let failRet = false;
+        await storage.delete({
+            key: 'x'.repeat(33),
+            success: async function () {
+                await expect(false).assertTrue();
+            },
+            fail: async function (data, errCode) {
+                failRet = true;
+                testData = data;
+                testErrCode = errCode;
+            }
+        });
+        expect(failRet).assertTrue();
+        expect("The key string length should shorter than 32.").assertEqual(testData);
+        expect(-1016).assertEqual(testErrCode);
+        console.log(TAG + '************* testDelete006 end *************');
+    })
+
+    /*
+     * @tc.name testSet009
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0009
+     * @tc.desc set without value parameter should still work (use empty string)
+     */
+    it('testSet009', 0, async function () {
+        console.log(TAG + '************* testSet009 start *************');
+        let successRet = false;
+        await storage.set({
+            key: 'testKey',
+            success: async function () {
+                successRet = true;
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            success: async function (data) {
+                await expect(data).assertEqual('');
+            }
+        });
+        await expect(successRet).assertTrue();
+        console.log(TAG + '************* testSet009 end *************');
+    })
+
+    /*
+     * @tc.name testLargeNumberOfKeys001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Large_0001
+     * @tc.desc set and get large number of keys to test resource cleanup
+     */
+    it('testLargeNumberOfKeys001', 0, async function () {
+        console.log(TAG + '************* testLargeNumberOfKeys001 start *************');
+        const keyCount = 20;
+        for (let i = 0; i < keyCount; i++) {
+            await storage.set({
+                key: 'key' + i,
+                value: 'value' + i,
+                success: async function () {
+                    await expect(true).assertTrue();
+                }
+            });
+        }
+        for (let i = 0; i < keyCount; i++) {
+            await storage.get({
+                key: 'key' + i,
+                success: async function (data) {
+                    await expect(data).assertEqual('value' + i);
+                }
+            });
+        }
+        console.log(TAG + '************* testLargeNumberOfKeys001 end *************');
+    })
+
+    /*
+     * @tc.name testBoundaryKeyLength001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Boundary_0001
+     * @tc.desc test key lengths around the 32 byte boundary
+     */
+    it('testBoundaryKeyLength001', 0, async function () {
+        console.log(TAG + '************* testBoundaryKeyLength001 start *************');
+        await storage.set({
+            key: 'x'.repeat(1),
+            value: 'value1',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.set({
+            key: 'x'.repeat(31),
+            value: 'value31',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.set({
+            key: 'x'.repeat(32),
+            value: 'value32',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'x'.repeat(1),
+            success: async function (data) {
+                await expect(data).assertEqual('value1');
+            }
+        });
+        await storage.get({
+            key: 'x'.repeat(31),
+            success: async function (data) {
+                await expect(data).assertEqual('value31');
+            }
+        });
+        await storage.get({
+            key: 'x'.repeat(32),
+            success: async function (data) {
+                await expect(data).assertEqual('value32');
+            }
+        });
+        console.log(TAG + '************* testBoundaryKeyLength001 end *************');
+    })
+
+    /*
+     * @tc.name testBoundaryValueLength001
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Boundary_0002
+     * @tc.desc test value lengths around the 128 byte boundary
+     */
+    it('testBoundaryValueLength001', 0, async function () {
+        console.log(TAG + '************* testBoundaryValueLength001 start *************');
+        await storage.set({
+            key: 'key1',
+            value: 'x'.repeat(1),
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.set({
+            key: 'key127',
+            value: 'x'.repeat(127),
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.set({
+            key: 'key128',
+            value: 'x'.repeat(128),
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'key1',
+            success: async function (data) {
+                await expect(data.length).assertEqual(1);
+            }
+        });
+        await storage.get({
+            key: 'key127',
+            success: async function (data) {
+                await expect(data.length).assertEqual(127);
+            }
+        });
+        await storage.get({
+            key: 'key128',
+            success: async function (data) {
+                await expect(data.length).assertEqual(128);
+            }
+        });
+        console.log(TAG + '************* testBoundaryValueLength001 end *************');
+    })
+
 })
