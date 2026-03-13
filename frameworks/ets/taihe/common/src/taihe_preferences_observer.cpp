@@ -25,7 +25,9 @@ TaihePreferencesObserver::TaihePreferencesObserver(CallbackType callback, ani_re
 TaihePreferencesObserver::~TaihePreferencesObserver()
 {
     if (auto *env = ::taihe::get_env()) {
-        env->GlobalReference_Delete(ref_);
+        if (env->GlobalReference_Delete(ref_) != ANI_OK) {
+            LOG_ERROR("GlobalReference_Delete failed");
+        };
     }
 }
 

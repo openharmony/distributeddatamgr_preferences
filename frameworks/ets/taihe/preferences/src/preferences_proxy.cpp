@@ -227,7 +227,9 @@ void PreferencesProxy::RegisteredObserver(RegisterMode mode, CallbackType callba
         }
         observers.push_back(observer);
     } else {
-        env->GlobalReference_Delete(callbackRef);
+        if (env->GlobalReference_Delete(callbackRef) != ANI_OK) {
+            LOG_ERROR("GlobalReference_Delete failed");
+        };
     }
     LOG_DEBUG("The observer subscribed success.");
     return;
@@ -262,7 +264,9 @@ void PreferencesProxy::RegisteredDataObserver(const std::vector<std::string> &ke
         }
         observers.push_back(observer);
     } else {
-        env->GlobalReference_Delete(callbackRef);
+        if (env->GlobalReference_Delete(callbackRef) != ANI_OK) {
+            LOG_ERROR("GlobalReference_Delete failed");
+        };
     }
     LOG_DEBUG("The dataChange observer subscribed success.");
     return;
