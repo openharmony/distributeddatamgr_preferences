@@ -453,12 +453,12 @@ describe('SystemStorageJsunit', function () {
     })
 
     /*
-     * @tc.name testSet005
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0005
+     * @tc.name testSet01
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_01
      * @tc.desc set key with exactly 32 bytes (boundary value) should succeed
      */
-    it('testSet005', 0, async function () {
-        console.log(TAG + '************* testSet005 start *************');
+    it('testSet01', 0, async function () {
+        console.log(TAG + '************* testSet01 start *************');
         let successRet = false;
         let key32 = 'x'.repeat(32);
         await storage.set({
@@ -478,16 +478,16 @@ describe('SystemStorageJsunit', function () {
             }
         });
         await expect(successRet).assertTrue();
-        console.log(TAG + '************* testSet005 end *************');
+        console.log(TAG + '************* testSet01 end *************');
     })
 
     /*
-     * @tc.name testSet006
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0006
+     * @tc.name testSet02
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_02
      * @tc.desc set value with exactly 128 bytes (boundary value) should succeed
      */
-    it('testSet006', 0, async function () {
-        console.log(TAG + '************* testSet006 start *************');
+    it('testSet02', 0, async function () {
+        console.log(TAG + '************* testSet02 start *************');
         let successRet = false;
         let value128 = 'x'.repeat(128);
         await storage.set({
@@ -508,16 +508,16 @@ describe('SystemStorageJsunit', function () {
             }
         });
         await expect(successRet).assertTrue();
-        console.log(TAG + '************* testSet006 end *************');
+        console.log(TAG + '************* testSet02 end *************');
     })
 
     /*
-     * @tc.name testSet007
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0007
+     * @tc.name testSet03
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_03
      * @tc.desc set without callbacks should still store value
      */
-    it('testSet007', 0, async function () {
-        console.log(TAG + '************* testSet007 start *************');
+    it('testSet03', 0, async function () {
+        console.log(TAG + '************* testSet03 start *************');
         await storage.set({
             key: 'testKey',
             value: 'testValue'
@@ -528,16 +528,40 @@ describe('SystemStorageJsunit', function () {
                 await expect(data).assertEqual('testValue');
             }
         });
-        console.log(TAG + '************* testSet007 end *************');
+        console.log(TAG + '************* testSet03 end *************');
     })
 
     /*
-     * @tc.name testGet005
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_0005
+     * @tc.name testSet04
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_04
+     * @tc.desc set without value parameter should still work (use empty string)
+     */
+    it('testSet04', 0, async function () {
+        console.log(TAG + '************* testSet04 start *************');
+        let successRet = false;
+        await storage.set({
+            key: 'testKey',
+            success: async function () {
+                successRet = true;
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            success: async function (data) {
+                await expect(data).assertEqual('');
+            }
+        });
+        await expect(successRet).assertTrue();
+        console.log(TAG + '************* testSet04 end *************');
+    })
+
+    /*
+     * @tc.name testGet01
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_01
      * @tc.desc get with default exactly 128 bytes (boundary value) should succeed
      */
-    it('testGet005', 0, async function () {
-        console.log(TAG + '************* testGet005 start *************');
+    it('testGet01', 0, async function () {
+        console.log(TAG + '************* testGet01 start *************');
         let default128 = 'x'.repeat(128);
         await storage.get({
             key: 'nonExistentKey',
@@ -549,16 +573,16 @@ describe('SystemStorageJsunit', function () {
                 await expect(false).assertTrue();
             }
         });
-        console.log(TAG + '************* testGet005 end *************');
+        console.log(TAG + '************* testGet01 end *************');
     })
 
     /*
-     * @tc.name testGet006
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_0006
+     * @tc.name testGet02
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_02
      * @tc.desc get without default parameter when key not exists should return empty string
      */
-    it('testGet006', 0, async function () {
-        console.log(TAG + '************* testGet006 start *************');
+    it('testGet02', 0, async function () {
+        console.log(TAG + '************* testGet02 start *************');
         let getData = undefined;
         await storage.get({
             key: 'nonExistentKey',
@@ -570,16 +594,16 @@ describe('SystemStorageJsunit', function () {
             }
         });
         await expect(getData).assertEqual('');
-        console.log(TAG + '************* testGet006 end *************');
+        console.log(TAG + '************* testGet02 end *************');
     })
 
     /*
-     * @tc.name testGet007
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_0007
+     * @tc.name testGet03
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Get_02
      * @tc.desc get with key over 32 bytes should receive fail callback
      */
-    it('testGet007', 0, async function () {
-        console.log(TAG + '************* testGet007 start *************');
+    it('testGet03', 0, async function () {
+        console.log(TAG + '************* testGet03 start *************');
         let testErrCode = undefined;
         let failRet = false;
         await storage.get({
@@ -594,7 +618,7 @@ describe('SystemStorageJsunit', function () {
         });
         expect(failRet).assertTrue();
         expect(-1016).assertEqual(testErrCode);
-        console.log(TAG + '************* testGet007 end *************');
+        console.log(TAG + '************* testGet03 end *************');
     })
 
     /*
@@ -694,51 +718,12 @@ describe('SystemStorageJsunit', function () {
     })
 
     /*
-     * @tc.name testDelete004
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_0004
-     * @tc.desc delete same key multiple times should not fail
-     */
-    it('testDelete004', 0, async function () {
-        console.log(TAG + '************* testDelete004 start *************');
-        await storage.set({
-            key: 'testKey',
-            value: 'testValue',
-            success: async function () {
-                await expect(true).assertTrue();
-            }
-        });
-        await storage.delete({
-            key: 'testKey',
-            success: async function () {
-                await expect(true).assertTrue();
-            }
-        });
-        await storage.delete({
-            key: 'testKey',
-            success: async function () {
-                await expect(true).assertTrue();
-            },
-            fail: async function () {
-                await expect(false).assertTrue();
-            }
-        });
-        await storage.get({
-            key: 'testKey',
-            default: 'defaultValue',
-            success: async function (data) {
-                await expect(data).assertEqual('defaultValue');
-            }
-        });
-        console.log(TAG + '************* testDelete004 end *************');
-    })
-
-    /*
-     * @tc.name testClear002
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Clear_0002
+     * @tc.name testClear01
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Clear_01
      * @tc.desc clear empty storage should succeed
      */
-    it('testClear002', 0, async function () {
-        console.log(TAG + '************* testClear002 start *************');
+    it('testClear01', 0, async function () {
+        console.log(TAG + '************* testClear01 start *************');
         let successRet = false;
         await storage.clear({
             success: async function () {
@@ -749,16 +734,16 @@ describe('SystemStorageJsunit', function () {
             }
         });
         await expect(successRet).assertTrue();
-        console.log(TAG + '************* testClear002 end *************');
+        console.log(TAG + '************* testClear01 end *************');
     })
 
     /*
-     * @tc.name testClear003
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Clear_0003
+     * @tc.name testClear02
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Clear_02
      * @tc.desc clear multiple times in sequence should succeed
      */
-    it('testClear003', 0, async function () {
-        console.log(TAG + '************* testClear003 start *************');
+    it('testClear02', 0, async function () {
+        console.log(TAG + '************* testClear02 start *************');
         const iterations = 3;
         for (let i = 0; i < iterations; i++) {
             await storage.set({
@@ -786,7 +771,7 @@ describe('SystemStorageJsunit', function () {
                 await expect(data).assertEqual('default');
             }
         });
-        console.log(TAG + '************* testClear003 end *************');
+        console.log(TAG + '************* testClear02 end *************');
     })
 
     /*
@@ -890,12 +875,51 @@ describe('SystemStorageJsunit', function () {
     })
 
     /*
-     * @tc.name testDelete005
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_0005
+     * @tc.name testDelete01
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_01
+     * @tc.desc delete same key multiple times should not fail
+     */
+    it('testDelete01', 0, async function () {
+        console.log(TAG + '************* testDelete01 start *************');
+        await storage.set({
+            key: 'testKey',
+            value: 'testValue',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.delete({
+            key: 'testKey',
+            success: async function () {
+                await expect(true).assertTrue();
+            }
+        });
+        await storage.delete({
+            key: 'testKey',
+            success: async function () {
+                await expect(true).assertTrue();
+            },
+            fail: async function () {
+                await expect(false).assertTrue();
+            }
+        });
+        await storage.get({
+            key: 'testKey',
+            default: 'defaultValue',
+            success: async function (data) {
+                await expect(data).assertEqual('defaultValue');
+            }
+        });
+        console.log(TAG + '************* testDelete01 end *************');
+    })
+
+    /*
+     * @tc.name testDelete02
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_02
      * @tc.desc delete key with exactly 32 bytes (boundary value) should succeed
      */
-    it('testDelete005', 0, async function () {
-        console.log(TAG + '************* testDelete005 start *************');
+    it('testDelete02', 0, async function () {
+        console.log(TAG + '************* testDelete02 start *************');
         let key32 = 'x'.repeat(32);
         await storage.set({
             key: key32,
@@ -920,16 +944,16 @@ describe('SystemStorageJsunit', function () {
                 await expect(data).assertEqual('default');
             }
         });
-        console.log(TAG + '************* testDelete005 end *************');
+        console.log(TAG + '************* testDelete02 end *************');
     })
 
     /*
-     * @tc.name testDelete006
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_0006
+     * @tc.name testDelete03
+     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Delete_03
      * @tc.desc delete key over 32 bytes should receive fail callback
      */
-    it('testDelete006', 0, async function () {
-        console.log(TAG + '************* testDelete006 start *************');
+    it('testDelete03', 0, async function () {
+        console.log(TAG + '************* testDelete03 start *************');
         let testErrCode = undefined;
         let testData = undefined;
         let failRet = false;
@@ -947,31 +971,7 @@ describe('SystemStorageJsunit', function () {
         expect(failRet).assertTrue();
         expect("The key string length should shorter than 32.").assertEqual(testData);
         expect(-1016).assertEqual(testErrCode);
-        console.log(TAG + '************* testDelete006 end *************');
-    })
-
-    /*
-     * @tc.name testSet009
-     * @tc.number SUB_DDM_AppDataFWK_SystemStorage_Set_0009
-     * @tc.desc set without value parameter should still work (use empty string)
-     */
-    it('testSet009', 0, async function () {
-        console.log(TAG + '************* testSet009 start *************');
-        let successRet = false;
-        await storage.set({
-            key: 'testKey',
-            success: async function () {
-                successRet = true;
-            }
-        });
-        await storage.get({
-            key: 'testKey',
-            success: async function (data) {
-                await expect(data).assertEqual('');
-            }
-        });
-        await expect(successRet).assertTrue();
-        console.log(TAG + '************* testSet009 end *************');
+        console.log(TAG + '************* testDelete03 end *************');
     })
 
     /*
