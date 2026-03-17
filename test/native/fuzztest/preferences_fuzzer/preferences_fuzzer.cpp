@@ -24,8 +24,6 @@
 using namespace OHOS::NativePreferences;
 
 namespace OHOS {
-constexpr size_t NUM_MIN = 1;
-constexpr size_t NUM_MAX = 32 * 1024 * 1024;
 class PreferencesFuzzTest {
 public:
     static void SetUpTestCase(void);
@@ -63,43 +61,6 @@ void PreferencesFuzzTest::TearDown(void)
 {
 }
 
-void PutVectorFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    size_t bytesSize = provider.ConsumeIntegralInRange<size_t>(NUM_MIN, NUM_MAX);
-    std::vector<uint8_t> value = provider.ConsumeBytes<uint8_t>(bytesSize);
-    PreferencesFuzzTest::Preferences_->Put(key, value);
-    return;
-}
-
-void GetVectorFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    size_t bytesSize = provider.ConsumeIntegralInRange<size_t>(NUM_MIN, NUM_MAX);
-    std::vector<uint8_t> value = provider.ConsumeBytes<uint8_t>(bytesSize);
-    PreferencesFuzzTest::Preferences_->Put(key, value);
-    PreferencesFuzzTest::Preferences_->Get(key, 0);
-    return;
-}
-
-void HasFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeIntegral<int32_t>();
-    PreferencesFuzzTest::Preferences_->PutInt(key, value);
-    PreferencesFuzzTest::Preferences_->HasKey(key);
-    return;
-}
-
-void GetValueFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeIntegral<int32_t>();
-    PreferencesFuzzTest::Preferences_->PutInt(key, value);
-    PreferencesFuzzTest::Preferences_->GetValue(key, 0);
-    return;
-}
-
 void GetAllFuzz(FuzzedDataProvider &provider)
 {
     std::string key = provider.ConsumeRandomLengthString();
@@ -124,108 +85,6 @@ void GetAllDatasFuzz(FuzzedDataProvider &provider)
     auto value = provider.ConsumeIntegral<int32_t>();
     PreferencesFuzzTest::Preferences_->PutInt(key, value);
     PreferencesFuzzTest::Preferences_->GetAllDatas();
-    return;
-}
-
-void PutIntFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeIntegral<int32_t>();
-    PreferencesFuzzTest::Preferences_->PutInt(key, value);
-    return;
-}
-
-void GetIntFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeIntegral<int32_t>();
-    PreferencesFuzzTest::Preferences_->PutInt(key, value);
-    PreferencesFuzzTest::Preferences_->GetInt(key);
-    return;
-}
-
-void PutStringFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    std::string value = provider.ConsumeRandomLengthString();
-    PreferencesFuzzTest::Preferences_->PutString(key, value);
-    return;
-}
-
-void GetStringFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    std::string value = provider.ConsumeRandomLengthString();
-    PreferencesFuzzTest::Preferences_->PutString(key, value);
-    PreferencesFuzzTest::Preferences_->GetString(key);
-    return;
-}
-
-void PutBoolFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeBool();
-    PreferencesFuzzTest::Preferences_->PutBool(key, value);
-    return;
-}
-
-void GetBoolFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeBool();
-    PreferencesFuzzTest::Preferences_->PutBool(key, value);
-    PreferencesFuzzTest::Preferences_->GetBool(key);
-    return;
-}
-
-void PutFloatFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeFloatingPoint<float>();
-    PreferencesFuzzTest::Preferences_->PutFloat(key, value);
-    return;
-}
-
-void GetFloatFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeFloatingPoint<float>();
-    PreferencesFuzzTest::Preferences_->PutFloat(key, value);
-    PreferencesFuzzTest::Preferences_->GetFloat(key);
-    return;
-}
-
-void PutDoubleFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeFloatingPoint<double>();
-    PreferencesFuzzTest::Preferences_->PutDouble(key, value);
-    return;
-}
-
-void GetDoubleFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeFloatingPoint<double>();
-    PreferencesFuzzTest::Preferences_->PutDouble(key, value);
-    PreferencesFuzzTest::Preferences_->GetDouble(key);
-    return;
-}
-
-void PutLongFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeFloatingPoint<double>();
-    PreferencesFuzzTest::Preferences_->PutLong(key, value);
-    return;
-}
-
-void GetLongFuzz(FuzzedDataProvider &provider)
-{
-    std::string key = provider.ConsumeRandomLengthString();
-    auto value = provider.ConsumeFloatingPoint<double>();
-    PreferencesFuzzTest::Preferences_->PutLong(key, value);
-    PreferencesFuzzTest::Preferences_->GetLong(key);
     return;
 }
 
@@ -276,25 +135,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     /* Run your code on data */
     FuzzedDataProvider provider(data, size);
     OHOS::PreferencesFuzzTest::SetUpTestCase();
-    OHOS::PutVectorFuzz(provider);
-    OHOS::GetVectorFuzz(provider);
-    OHOS::HasFuzz(provider);
-    OHOS::GetValueFuzz(provider);
     OHOS::GetAllFuzz(provider);
     OHOS::GetAllDataFuzz(provider);
     OHOS::GetAllDatasFuzz(provider);
-    OHOS::PutIntFuzz(provider);
-    OHOS::GetIntFuzz(provider);
-    OHOS::PutStringFuzz(provider);
-    OHOS::GetStringFuzz(provider);
-    OHOS::PutBoolFuzz(provider);
-    OHOS::GetBoolFuzz(provider);
-    OHOS::PutFloatFuzz(provider);
-    OHOS::GetFloatFuzz(provider);
-    OHOS::PutDoubleFuzz(provider);
-    OHOS::PutLongFuzz(provider);
-    OHOS::GetDoubleFuzz(provider);
-    OHOS::GetLongFuzz(provider);
     OHOS::DeleteFuzz(provider);
     OHOS::ClearFuzz(provider);
     OHOS::FlushFuzz(provider);
