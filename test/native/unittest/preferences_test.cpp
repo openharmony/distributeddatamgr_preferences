@@ -24,6 +24,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 
 #include "log_print.h"
 #include "preferences_errno.h"
@@ -1386,11 +1387,9 @@ HWTEST_F(PreferencesTest, NativePreferencesMultiThreadTest_001, TestSize.Level1)
     auto pref = PreferencesHelper::GetPreferences(path, errCode);
     ASSERT_NE(pref, nullptr);
     EXPECT_EQ(errCode, E_OK);
-
     const int threadCount = 10;
     const int iterations = 100;
     std::vector<std::thread> threads;
-
     for (int i = 0; i < threadCount; i++) {
         threads.emplace_back([pref, i, iterations]() {
             for (int j = 0; j < iterations; j++) {
@@ -1401,13 +1400,10 @@ HWTEST_F(PreferencesTest, NativePreferencesMultiThreadTest_001, TestSize.Level1)
             }
         });
     }
-
     for (auto& thread : threads) {
         thread.join();
     }
-
     pref->FlushSync();
-
     for (int i = 0; i < threadCount; i++) {
         for (int j = 0; j < iterations; j++) {
             std::string key = "thread_" + std::to_string(i) + "_key_" + std::to_string(j);
@@ -1415,7 +1411,6 @@ HWTEST_F(PreferencesTest, NativePreferencesMultiThreadTest_001, TestSize.Level1)
             EXPECT_EQ(value, i * 1000 + j);
         }
     }
-
     PreferencesHelper::DeletePreferences(path);
 }
 
@@ -1431,14 +1426,12 @@ HWTEST_F(PreferencesTest, NativePreferencesMultiThreadTest_002, TestSize.Level1)
     auto pref = PreferencesHelper::GetPreferences(path, errCode);
     ASSERT_NE(pref, nullptr);
     EXPECT_EQ(errCode, E_OK);
-
     const int writerThreadCount = 5;
     const int readerThreadCount = 5;
     const int iterations = 50;
     std::atomic<int> writeCount(0);
     std::atomic<int> readCount(0);
     std::vector<std::thread> threads;
-
     for (int i = 0; i < writerThreadCount; i++) {
         threads.emplace_back([pref, i, iterations, &writeCount]() {
             for (int j = 0; j < iterations; j++) {
@@ -1449,7 +1442,6 @@ HWTEST_F(PreferencesTest, NativePreferencesMultiThreadTest_002, TestSize.Level1)
             }
         });
     }
-
     for (int i = 0; i < readerThreadCount; i++) {
         threads.emplace_back([pref, i, iterations, &readCount]() {
             for (int j = 0; j < iterations; j++) {
@@ -1461,14 +1453,11 @@ HWTEST_F(PreferencesTest, NativePreferencesMultiThreadTest_002, TestSize.Level1)
             }
         });
     }
-
     for (auto& thread : threads) {
         thread.join();
     }
-
     EXPECT_EQ(writeCount.load(), writerThreadCount * iterations);
     EXPECT_EQ(readCount.load(), readerThreadCount * iterations);
-
     PreferencesHelper::DeletePreferences(path);
 }
 } // namespace
