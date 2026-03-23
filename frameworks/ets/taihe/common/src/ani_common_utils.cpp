@@ -501,13 +501,18 @@ std::string AniStringToStdStr(ani_env *env, ani_string aniStr)
         return "";
     }
     ani_size strSize;
-    env->String_GetUTF8Size(aniStr, &strSize);
-    if (strSize == 0) {
+    auto status = env->String_GetUTF8Size(aniStr, &strSize);
+    if (status != ANI_OK || strSize == 0) {
+        LOG_ERROR("String_GetUTF8Size failed. status:%{public}d", status);
         return "";
     }
     std::string content(strSize + 1, '\0');
     ani_size bytes_written = 0;
-    env->String_GetUTF8(aniStr, &content[0], strSize + 1, &bytes_written);
+    status = env->String_GetUTF8(aniStr, &content[0], strSize + 1, &bytes_written);
+    if (status != ANI_OK) {
+        LOG_ERROR("String_GetUTF8 failed. status:%{public}d", status);
+        return "";
+    }
     content.resize(bytes_written);
     return content;
 }
