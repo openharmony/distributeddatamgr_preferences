@@ -502,15 +502,15 @@ std::string AniStringToStdStr(ani_env *env, ani_string aniStr)
     }
     ani_size strSize;
     auto status = env->String_GetUTF8Size(aniStr, &strSize);
-    if (strSize == 0 || status != ANI_OK) {
-        LOG_ERROR("String_GetUTF8Size failed.");
+    if (status != ANI_OK || strSize == 0) {
+        LOG_ERROR("String_GetUTF8Size failed. status:%{public}d", status);
         return "";
     }
     std::string content(strSize + 1, '\0');
     ani_size bytes_written = 0;
     status = env->String_GetUTF8(aniStr, &content[0], strSize + 1, &bytes_written);
     if (status != ANI_OK) {
-        LOG_ERROR("String_GetUTF8 failed.");
+        LOG_ERROR("String_GetUTF8 failed. status:%{public}d", status);
         return "";
     }
     content.resize(bytes_written);
