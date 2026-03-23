@@ -128,6 +128,9 @@ bool PreferencesImpl::ReloadFromDisk()
 
 bool PreferencesImpl::PreLoad()
 {
+    if (loadResult_) {
+        return true;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
     if (!loaded_.load()) {
         return true;
