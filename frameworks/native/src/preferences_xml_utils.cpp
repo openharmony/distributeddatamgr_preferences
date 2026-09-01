@@ -18,8 +18,11 @@
 #include <sys/stat.h>
 
 #include <cerrno>
+#include <charconv>
 #include <cstring>
 #include <sstream>
+#include <system_error>
+#include <type_traits>
 
 #include "libxml/parser.h"
 #include <libxml/xmlwriter.h>
@@ -321,36 +324,66 @@ std::string GetTypeName<std::vector<int64_t>>()
 }
 
 template<typename T>
-static void Convert2PrefValue(const Element &element, T &value)
+static bool ParsePrefInteger(const std::string &text, T &out)
+{
+    static_assert(std::is_integral_v<T> && !std::is_same_v<T, bool>,
+        "ParsePrefInteger requires a non-bool integral type");
+    if (text.empty()) {
+        return false;
+    }
+    T value{};
+    const char *first = text.data();
+    const char *last = first + text.size();
+    auto result = std::from_chars(first, last, value);
+    if (result.ec != std::errc() || result.ptr != last) {
+        return false;
+    }
+    out = value;
+    return true;
+}
+
+template<typename T>
+static bool Convert2PrefValue(const Element &element, T &value)
 {
     if constexpr (std::is_same<T, std::string>::value) {
         value = element.value_;
+        return true;
     } else if constexpr (std::is_same<T, bool>::value) {
         value = (element.value_.compare("true") == 0) ? true : false;
+        return true;
     } else if constexpr (std::is_same<T, std::monostate>::value) {
         value = std::monostate();
+        return true;
+    } else if constexpr (std::is_integral_v<T>) {
+        return ParsePrefInteger(element.value_, value);
     } else {
         std::stringstream ss;
         ss << element.value_;
         ss >> value;
+        return true;
     }
 }
 
 template<typename T>
-static void Convert2PrefValue(const Element &element, std::vector<T> &values)
+static bool Convert2PrefValue(const Element &element, std::vector<T> &values)
 {
     for (const auto &child : element.children_) {
-        T value;
-        Convert2PrefValue(child, value);
+        T value{};
+        if (!Convert2PrefValue(child, value)) {
+            return false;
+        }
         values.push_back(value);
     }
+    return true;
 }
 
-static void Convert2PrefValue(const Element &element, BigInt &value)
+static bool Convert2PrefValue(const Element &element, BigInt &value)
 {
     for (const auto &child : element.children_) {
-        uint64_t val;
-        Convert2PrefValue(child, val);
+        uint64_t val = 0;
+        if (!Convert2PrefValue(child, val)) {
+            return false;
+        }
         value.words_.push_back(val);
     }
     value.sign_ = 0;
@@ -358,6 +391,7 @@ static void Convert2PrefValue(const Element &element, BigInt &value)
         value.sign_ = static_cast<int>(value.words_[value.words_.size() - 1]);
         value.words_.pop_back();
     }
+    return true;
 }
 
 template<typename T>
@@ -367,24 +401,28 @@ bool GetPrefValue(const Element &element, T &value)
     return false;
 }
 
-static void Convert2PrefValue(const Element &element, std::vector<uint8_t> &value)
+static bool Convert2PrefValue(const Element &element, std::vector<uint8_t> &value)
 {
     if (!Base64Helper::Decode(element.value_, value)) {
         value.clear();
     }
+    return true;
 }
 
-static void Convert2PrefValue(const Element &element, Object &value)
+static bool Convert2PrefValue(const Element &element, Object &value)
 {
     value.valueStr = element.value_;
+    return true;
 }
 
 template<typename T, typename First, typename... Types>
 bool GetPrefValue(const Element &element, T &value)
 {
     if (element.tag_ == GetTypeName<First>()) {
-        First val;
-        Convert2PrefValue(element, val);
+        First val{};
+        if (!Convert2PrefValue(element, val)) {
+            return false;
+        }
         value = val;
         return true;
     }
